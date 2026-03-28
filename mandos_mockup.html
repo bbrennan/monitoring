@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Mandos — Monitoring Result</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:#080a0c;color:#dde3e8;font-family:'DM Sans',sans-serif;min-height:100vh;padding:24px;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#2a3138;border-radius:2px;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+.wrap{max-width:1000px;margin:0 auto;}
+.wordmark{display:flex;align-items:center;gap:10px;margin-bottom:20px;}
+.wordmark-name{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;letter-spacing:.05em;color:#dde3e8;border-left:3px solid #5b9cf6;padding-left:8px;}
+.wordmark-ver{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#3d4a55;}
+.wordmark-ts{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#3d4a55;margin-left:auto;}
+.breadcrumb{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;}
+.breadcrumb span{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#3d4a55;}
+.breadcrumb .model{color:#7a8897;}
+.header-grid{display:grid;grid-template-columns:auto 1fr 1fr 1fr 1fr 1fr;border:1px solid #1e2428;border-radius:6px;overflow:hidden;background:#0f1214;margin-bottom:8px;}
+.hcell{padding:12px 16px;border-right:1px solid #1e2428;}
+.hcell:last-child{border-right:none;}
+.hcell-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#3d4a55;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.hcell-val{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;}
+.hcell-sub{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#7a8897;margin-top:2px;}
+.status-cell{padding:12px 20px;display:flex;flex-direction:column;justify-content:center;}
+.header-meta{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px;}
+.meta-item{display:flex;align-items:center;gap:6px;}
+.meta-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#3d4a55;}
+.meta-val{font-family:'IBM Plex Mono',monospace;font-size:10px;}
+.crit{color:#f04f4f;}.crit-bg{background:rgba(240,79,79,.07);}.crit-bdr{border-color:rgba(240,79,79,.2)!important;}
+.warn{color:#e8962a;}.warn-bg{background:rgba(232,150,42,.07);}.warn-bdr{border-color:rgba(232,150,42,.2)!important;}
+.ok{color:#3dba7e;}.ok-bg{background:rgba(61,186,126,.07);}.ok-bdr{border-color:rgba(61,186,126,.2)!important;}
+.info{color:#5b9cf6;}
+.badge{display:inline-flex;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.08em;padding:2px 7px;border-radius:3px;border:1px solid;}
+.tabbar{display:flex;border-bottom:1px solid #1e2428;margin-bottom:20px;}
+.tab{padding:7px 14px;border:none;border-bottom:2px solid transparent;background:transparent;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7a8897;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .1s;}
+.tab.active{color:#dde3e8;font-weight:600;border-bottom-color:#5b9cf6;background:#151a1e;}
+.tab-badge{font-size:9px;padding:0 5px;border-radius:10px;font-weight:700;}
+.sec-label{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;color:#3d4a55;text-transform:uppercase;margin-bottom:12px;}
+.divider{height:1px;background:#1e2428;margin:20px 0;}
+.csi-header{display:flex;gap:4px;margin-bottom:10px;}
+.csi-header span{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#3d4a55;}
+.csi-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.csi-name{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7a8897;width:230px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.csi-track{flex:1;height:16px;background:#0f1214;border-radius:2px;overflow:hidden;position:relative;}
+.csi-fill{position:absolute;left:0;top:0;height:100%;border-radius:2px;opacity:.85;}
+.csi-threshold{position:absolute;top:0;bottom:0;width:1px;background:#e8962a;opacity:.5;}
+.csi-num{font-family:'IBM Plex Mono',monospace;font-size:10px;width:44px;text-align:right;font-weight:600;}
+.drift-card{border:1px solid #1e2428;border-radius:6px;margin-bottom:8px;overflow:hidden;transition:border-color .15s;}
+.drift-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;}
+.drift-header:hover{background:rgba(255,255,255,.02);}
+.drift-left{display:flex;align-items:center;gap:10px;}
+.drift-right{display:flex;align-items:center;gap:16px;}
+.drift-csi{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;}
+.drift-legend{display:flex;align-items:center;gap:4px;}
+.legend-dot{width:8px;height:8px;border-radius:2px;display:inline-block;}
+.legend-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#7a8897;}
+.drift-note{font-family:'DM Sans',sans-serif;font-size:12px;color:#7a8897;line-height:1.6;margin-bottom:12px;border-left:2px solid;padding-left:10px;}
+.score-psi{display:flex;align-items:baseline;gap:12px;margin-bottom:12px;}
+.score-psi-num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;}
+.dq-card{padding:12px 14px;margin-bottom:8px;border-radius:6px;border:1px solid;}
+.dq-card-header{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.dq-flag{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7a8897;background:#0f1214;padding:1px 6px;border-radius:3px;border:1px solid #1e2428;}
+.dq-note{font-family:'DM Sans',sans-serif;font-size:12px;color:#7a8897;line-height:1.6;}
+.hm-table{width:100%;font-family:'IBM Plex Mono',monospace;font-size:11px;}
+.hm-table th{padding:6px 10px;color:#7a8897;font-weight:500;text-align:left;font-size:10px;border-bottom:1px solid #2a3138;}
+.hm-table td{padding:6px 10px;border-bottom:1px solid #1e2428;}
+.contract-info{padding:10px 14px;margin-bottom:20px;border-radius:6px;border:1px solid #1e2428;background:#151a1e;font-family:'DM Sans',sans-serif;font-size:12px;color:#7a8897;line-height:1.7;}
+.contract-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;align-items:center;gap:12px;padding:10px 14px;margin-bottom:4px;border-radius:4px;border:1px solid;}
+.footer{margin-top:32px;padding-top:16px;border-top:1px solid #1e2428;display:flex;justify-content:space-between;align-items:center;}
+.footer-actions{display:flex;gap:8px;}
+.footer-btn{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#7a8897;background:#0f1214;border:1px solid #1e2428;padding:4px 10px;border-radius:3px;cursor:pointer;}
+.footer-btn:hover{border-color:#2a3138;color:#dde3e8;}
+.footer-meta{font-family:'IBM Plex Mono',monospace;font-size:9px;color:#3d4a55;}
+.panel{display:none;}.panel.active{display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="wordmark">
+    <span class="wordmark-name">mandos</span>
+    <span class="wordmark-ver">1.0.0</span>
+    <span class="wordmark-ts">2026-03-28 14:09:52</span>
+  </div>
+  <div class="breadcrumb">
+    <span>mandos monitor</span><span class="model">Zuul2 / RTL_SUBPRIME</span><span>snapshot: 2026-03</span>
+  </div>
+  <div class="header-grid">
+    <div class="hcell status-cell crit-bg" style="border-right:1px solid rgba(240,79,79,.2)">
+      <div class="hcell-label">Status</div>
+      <div class="hcell-val crit" style="font-size:20px">CRITICAL</div>
+    </div>
+    <div class="hcell"><div class="hcell-label">Features</div><div class="hcell-val">24</div><div class="hcell-sub">9 drifted</div></div>
+    <div class="hcell"><div class="hcell-label">DQ Issues</div><div class="hcell-val warn">5</div></div>
+    <div class="hcell"><div class="hcell-label">Drift Issues</div><div class="hcell-val crit">10</div></div>
+    <div class="hcell"><div class="hcell-label">Score PSI</div><div class="hcell-val ok">0.037</div><div class="hcell-sub">stable</div></div>
+    <div class="hcell" style="border-right:none"><div class="hcell-label">Row Count</div><div class="hcell-val warn" style="font-size:13px">2.95M → 224K</div><div class="hcell-sub">-92.4% — check JOIN fanout</div></div>
+  </div>
+  <div class="header-meta">
+    <div class="meta-item"><span class="meta-label">Schema:</span><span class="meta-val ok">No changes ✓</span></div>
+    <div class="meta-item"><span class="meta-label">Gate failures:</span><span class="meta-val ok">0 ✓</span></div>
+    <div class="meta-item"><span class="meta-label">NULL injection:</span><span class="meta-val warn">MEAN_VANTAGE_V4_SCORE ⚠</span></div>
+    <div class="meta-item"><span class="meta-label">Baseline ID:</span><span class="meta-val" style="color:#7a8897;font-size:9px">444835ac-0f7a-4e3a-9968-27cd5277091a</span></div>
+  </div>
+  <div class="tabbar">
+    <button class="tab active" onclick="switchTab(0)">Drift Analysis <span class="tab-badge badge crit" style="border-color:rgba(240,79,79,.3)">CRITICAL</span></button>
+    <button class="tab" onclick="switchTab(1)">Score Health</button>
+    <button class="tab" onclick="switchTab(2)">Data Quality <span class="tab-badge badge warn" style="border-color:rgba(232,150,42,.3)">WARN</span></button>
+    <button class="tab" onclick="switchTab(3)">Contracts <span class="tab-badge badge crit" style="border-color:rgba(240,79,79,.3)">CRITICAL</span></button>
+  </div>
+
+  <!-- TAB 0: DRIFT -->
+  <div class="panel active" id="panel-0">
+    <div class="sec-label">Drift Overview — 9 features drifted · sorted by CSI</div>
+    <div id="csi-overview"></div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:8px">
+      <div style="width:1px;height:12px;background:#e8962a;opacity:.6"></div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#3d4a55">WARN threshold (0.25)</span>
+    </div>
+    <div class="divider"></div>
+    <div class="sec-label">Feature Detail — top 2 expanded · click to expand others</div>
+    <div id="drift-cards"></div>
+  </div>
+
+  <!-- TAB 1: SCORE -->
+  <div class="panel" id="panel-1">
+    <div class="sec-label">Score Distribution — ZUUL2_SCORE</div>
+    <div class="score-psi">
+      <span class="score-psi-num ok">0.037</span>
+      <span style="font-family:'DM Sans',sans-serif;font-size:12px;color:#7a8897">PSI — score distribution is stable</span>
+      <span class="badge ok" style="border-color:rgba(61,186,126,.3)">OK</span>
+    </div>
+    <p style="font-family:'DM Sans',sans-serif;font-size:12px;color:#7a8897;line-height:1.6;margin-bottom:12px">
+      ZUUL2_SCORE is holding well despite significant feature drift. The [38, 801) and [971, 999) bins show slight overrepresentation in production, but overall PSI is well below the 0.10 WARN threshold. Note: score is integer-truncated at 999 in Dynatrace — a known pipeline limitation.
+    </p>
+    <div id="score-chart"></div>
+  </div>
+
+  <!-- TAB 2: DQ -->
+  <div class="panel" id="panel-2">
+    <div class="sec-label">Data Quality Issues — 5 flagged</div>
+    <div class="dq-card warn-bdr warn-bg">
+      <div class="dq-card-header"><span class="badge crit" style="border-color:rgba(240,79,79,.3)">CRITICAL</span><span class="mono" style="font-size:12px">ISSAMEADDRESS</span><span class="dq-flag">constant_feature</span></div>
+      <p class="dq-note">100% of rows are 0. Feature is dead in production — possible broken upstream join or constant encoding error.</p>
+    </div>
+    <div class="dq-card warn-bdr warn-bg">
+      <div class="dq-card-header"><span class="badge warn" style="border-color:rgba(232,150,42,.3)">WARN</span><span class="mono" style="font-size:12px">P13_IQF9416</span><span class="dq-flag">zero_rate</span></div>
+      <p class="dq-note">92.2% zeros. Near-constant with sparse signal. No baseline available for comparison.</p>
+    </div>
+    <div class="dq-card warn-bdr warn-bg">
+      <div class="dq-card-header"><span class="badge warn" style="border-color:rgba(232,150,42,.3)">WARN</span><span class="mono" style="font-size:12px">MEAN_VANTAGE_V4_SCORE</span><span class="dq-flag">null_injection</span></div>
+      <p class="dq-note">8.2% missing — significantly higher than reference (0%). Possible failed JOIN on bureau data pull.</p>
+    </div>
+    <div class="dq-card warn-bdr warn-bg">
+      <div class="dq-card-header"><span class="badge warn" style="border-color:rgba(232,150,42,.3)">WARN</span><span class="mono" style="font-size:12px">AP_VEHICLE_PAYMENT_PROXY_LINE3</span><span class="dq-flag">skewness_flag</span></div>
+      <p class="dq-note">Skewness = 67.1. Max value is 46× the 99th percentile. Check whether capping is applied correctly in the production pipeline.</p>
+    </div>
+    <div class="dq-card warn-bdr warn-bg">
+      <div class="dq-card-header"><span class="badge warn" style="border-color:rgba(232,150,42,.3)">WARN</span><span class="mono" style="font-size:12px">LOG_PAY_TO_INCOME_PROXY_SUM_LINE3</span><span class="dq-flag">skewness_flag</span></div>
+      <p class="dq-note">Skewness = 26.5. Extreme right tail present in production.</p>
+    </div>
+    <div class="divider"></div>
+    <div class="sec-label">DQ Heatmap — capping · flooring · missing · zero rates</div>
+    <div style="overflow-x:auto"><table class="hm-table"><thead><tr><th>Feature</th><th>Capping %</th><th>Flooring %</th><th>Missing %</th><th>Zero %</th></tr></thead><tbody id="hm-body"></tbody></table></div>
+  </div>
+
+  <!-- TAB 3: CONTRACTS -->
+  <div class="panel" id="panel-3">
+    <div class="contract-info">Feature contracts are defined in <span class="mono info" style="font-size:11px">configs/zuul2_rtl_subprime.yaml</span>. Every column with a defined rule is evaluated here — passing and failing. Violations indicate the production pipeline is not respecting the feature engineering contract established at training time.</div>
+    <div class="sec-label">Critical Violations — 7</div><div id="contracts-crit"></div>
+    <div class="sec-label" style="margin-top:16px">Warnings — 2</div><div id="contracts-warn"></div>
+    <div class="sec-label" style="margin-top:16px">Passing — 2</div><div id="contracts-ok"></div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-actions">
+      <button class="footer-btn">Export PDF</button>
+      <button class="footer-btn">Export HTML</button>
+      <button class="footer-btn">result.issues()</button>
+    </div>
+    <span class="footer-meta">507 metrics · 224,257 rows · 16.0s</span>
+  </div>
+</div>
+
+<script>
+var DRIFTED=[
+  {name:"P13_AUA8320",csi:4.779,status:"CRITICAL",note:"Population has collapsed into the top bin (≥161). 4.8% in training → 28.8% in production. Fundamental population shift — not noise.",
+   bins:[{l:"< 5",r:1.2,c:0},{l:"[5,21)",r:11,c:10.2},{l:"[21,38)",r:11.8,c:9.8},{l:"[38,52)",r:10.5,c:10.3},{l:"[52,67)",r:10.2,c:11.2},{l:"[67,73)",r:5,c:4.5},{l:"[73,92)",r:12.1,c:11.8},{l:"[92,161)",r:11.2,c:11.5},{l:"≥ 161",r:5.5,c:28.8}]},
+  {name:"P13_IQA9427",csi:2.395,status:"CRITICAL",note:"Training was 60% concentrated in [0, 0.5). In production that bin holds only 31%. Major redistribution toward higher values.",
+   bins:[{l:"< 0",r:0,c:7},{l:"[0,0.5)",r:59.5,c:30.8},{l:"[0.5,1.5)",r:9.8,c:31},{l:"[1.5,12)",r:30,c:23.5},{l:"≥ 12",r:0.7,c:7.7}]},
+  {name:"AUTO_PAYMENT_TO_DEBT",csi:1.076,status:"CRITICAL",note:"Near-zero values absent from training now make up 8.9% of production. Single bin drives 94% of total CSI. Likely imputation or preprocessing difference.",
+   bins:[{l:"<.008",r:0,c:8.9},{l:"[.008,.14)",r:10,c:9.4},{l:"[.14,.19)",r:10,c:8.6},{l:"[.19,.24)",r:10,c:7.1},{l:"[.24,.29)",r:10,c:6.6},{l:"[.29,.41)",r:10,c:8.8},{l:"[.41,.49)",r:10,c:9.2},{l:"[.49,.62)",r:10,c:15.2},{l:"≥ .83",r:10,c:10.4}]},
+  {name:"MEAN_VANTAGE_V4_SCORE",csi:0.479,status:"CRITICAL",note:"Training min was 765 — production min is 370. New lower-score applicants entering the pipeline. Also 8.2% missing.",
+   bins:[{l:"<500",r:0,c:4.1},{l:"[500,560)",r:6.2,c:8.8},{l:"[560,585)",r:9.8,c:10.1},{l:"[585,604)",r:10.1,c:10.8},{l:"[604,619)",r:10.2,c:10.5},{l:"[619,636)",r:10.3,c:10.2},{l:"[636,653)",r:10.2,c:9.8},{l:"[653,672)",r:10.2,c:9.4},{l:"≥ 700",r:22.7,c:16.8}]},
+  {name:"AP_VEHICLE_PAYMENT",csi:0.466,status:"CRITICAL",note:"Max went from 2,511 to 55,903. Mean jumped +37%. Outliers in production not present in training — check capping logic.",
+   bins:[{l:"<197",r:10,c:3.6},{l:"[197,241)",r:10,c:3.4},{l:"[241,281)",r:10,c:4.3},{l:"[281,320)",r:10,c:5.9},{l:"[320,360)",r:10,c:7.8},{l:"[400,449)",r:10,c:9.8},{l:"[449,509)",r:10,c:10.8},{l:"[509,606)",r:10,c:14.2},{l:"≥ 606",r:10,c:31.2}]},
+  {name:"P13_ALL4520",csi:0.585,status:"CRITICAL",note:"Top bin (≥84) grew from 5.5% to 13.4%. Distribution has shifted toward higher credit bureau values.",
+   bins:[{l:"<2",r:0,c:2.1},{l:"[2,10)",r:10.2,c:10.3},{l:"[10,19)",r:10.8,c:11.5},{l:"[19,27)",r:9.7,c:8.8},{l:"[27,35)",r:10.1,c:9.2},{l:"[35,43)",r:9.8,c:9.4},{l:"[43,53)",r:11.9,c:10.8},{l:"[53,63)",r:9.6,c:9.8},{l:"≥ 84",r:7.3,c:13.4}]},
+  {name:"P13_ALL0448",csi:0.444,status:"CRITICAL",note:"Similar pattern to P13_ALL4520. Credit bureau attribute distribution shifted toward higher values.",
+   bins:[{l:"<10",r:0.5,c:2.8},{l:"[10,25)",r:10.5,c:9.8},{l:"[25,40)",r:10.8,c:9.5},{l:"[40,55)",r:11.2,c:9.2},{l:"[55,65)",r:10,c:9.8},{l:"[65,72)",r:9.8,c:10.5},{l:"[72,78)",r:9.5,c:10.8},{l:"[78,84)",r:11.5,c:10.2},{l:"≥ 84",r:26.2,c:27.4}]},
+  {name:"P13_RTR0300",csi:0.488,status:"CRITICAL",note:"Zero rate jumped significantly in production (37% vs 15% in training). Non-zero distribution also shifted.",
+   bins:[{l:"=0",r:15.2,c:36.9},{l:"(0,5)",r:14.8,c:9.2},{l:"[5,15)",r:15.1,c:10.5},{l:"[15,30)",r:14.9,c:11.8},{l:"[30,50)",r:15,c:13.2},{l:"≥ 50",r:25,c:18.4}]},
+  {name:"AP_PCT_ADVANCED_RATIO",csi:0.328,status:"CRITICAL",note:"Both tails are new. Training had no values below 29 or above 148. Production has both. Check preprocessing pipeline.",
+   bins:[{l:"<29",r:0,c:0.5},{l:"[29,80)",r:9.1,c:8.9},{l:"[80,92)",r:10.7,c:8.4},{l:"[92,99)",r:9.4,c:6.7},{l:"[99,109)",r:10.4,c:9.3},{l:"[109,113)",r:10,c:9.2},{l:"[113,117)",r:8.4,c:7.8},{l:"≥ 117",r:11.6,c:11.4}]},
+];
+
+var SCORE_BINS=[{l:"<38",r:0,c:0},{l:"[38,801)",r:10,c:14.4},{l:"[801,846)",r:9.8,c:10.8},{l:"[846,874)",r:10,c:9.9},{l:"[874,895)",r:10,c:9.1},{l:"[895,912)",r:9.8,c:8.3},{l:"[912,928)",r:10.3,c:8.3},{l:"[928,942)",r:9.7,c:8.1},{l:"[942,956)",r:9.9,c:8.7},{l:"[956,971)",r:10,c:9},{l:"[971,999)",r:10.5,c:13.4},{l:"≥999",r:0,c:0}];
+
+var HM_ROWS=[
+  {f:"MEAN_VANTAGE_V4_SCORE",cap:0.03,floor:0,miss:8.17,zero:0},
+  {f:"P13_ALL0448",cap:3.33,floor:27.07,miss:2.74,zero:27.07},
+  {f:"P13_RTR0300",cap:3.33,floor:36.86,miss:2.74,zero:36.86},
+  {f:"P13_IQF9416",cap:0,floor:92.2,miss:2.74,zero:92.2},
+  {f:"P13_IQA9427",cap:0.1,floor:6.64,miss:2.74,zero:6.64},
+  {f:"P13_AUA8320",cap:3.33,floor:0.12,miss:2.74,zero:0},
+  {f:"VEHICLE_TYPE_N",cap:55.03,floor:44.97,miss:0,zero:44.97},
+  {f:"VANTAGE_V4_SCORE_MISSING",cap:16.17,floor:83.83,miss:0,zero:83.83},
+  {f:"P13_BCX5420_99",cap:15.07,floor:84.93,miss:0,zero:84.93},
+  {f:"MTF0300_GT0",cap:25.93,floor:74.07,miss:0,zero:74.07},
+];
+
+var CONTRACTS={
+  crit:[{f:"MEAN_VANTAGE_V4_SCORE",rule:"nullable=False",obs:"8.2% null"},{f:"LOG_PAY_TO_INCOME_SUM_LINE3",rule:"nullable=False",obs:"0.1% null"},{f:"P13_ALL0448",rule:"nullable=False",obs:"2.7% null"},{f:"P13_ALL4520",rule:"nullable=False",obs:"2.7% null"},{f:"P13_AUA8320",rule:"nullable=False",obs:"2.7% null"},{f:"P13_IQA9427",rule:"nullable=False",obs:"2.7% null"},{f:"P13_RTR0300",rule:"nullable=False",obs:"2.7% null"}],
+  warn:[{f:"ZUUL2_SCORE",rule:"dtype: continuous",obs:"Truncated at 999 (integer)"},{f:"IS_SUBVENTION",rule:"dtype: numeric rate",obs:"Binary proxy (0/1)"}],
+  ok:[{f:"LTV",rule:"cap=0.95",obs:"3.2% capped"},{f:"DOWN_RATIO",rule:"floor=0.0",obs:"0.0% floored"}]
+};
+
+function makeBinSVG(bins,W,H){
+  W=W||800;H=H||155;
+  var pL=38,pR=8,pT=8,pB=30;
+  var cW=W-pL-pR,cH=H-pT-pB;
+  var n=bins.length;
+  var maxV=0;
+  bins.forEach(function(b){maxV=Math.max(maxV,b.r,b.c);});
+  maxV=Math.max(maxV,1)*1.05;
+  var gW=cW/n;
+  var bW=Math.min((gW-4)/2,20);
+  var s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+W+' '+H+'" style="width:100%;display:block">';
+  // grid lines
+  [0,Math.round(maxV/2),Math.round(maxV)].forEach(function(t){
+    var y=pT+cH-(t/maxV)*cH;
+    s+='<line x1="'+pL+'" y1="'+y+'" x2="'+(W-pR)+'" y2="'+y+'" stroke="#1e2428" stroke-width="1"/>';
+    s+='<text x="'+(pL-4)+'" y="'+(y+3)+'" font-family="IBM Plex Mono,monospace" font-size="8" fill="#3d4a55" text-anchor="end">'+t+'%</text>';
+  });
+  // bars + labels
+  bins.forEach(function(b,i){
+    var gx=pL+i*gW+(gW-bW*2-2)/2;
+    var rh=(b.r/maxV)*cH, ch=(b.c/maxV)*cH;
+    if(rh>0) s+='<rect x="'+gx.toFixed(1)+'" y="'+(pT+cH-rh).toFixed(1)+'" width="'+bW.toFixed(1)+'" height="'+rh.toFixed(1)+'" fill="#4b8ef0" rx="2"/>';
+    if(ch>0) s+='<rect x="'+(gx+bW+2).toFixed(1)+'" y="'+(pT+cH-ch).toFixed(1)+'" width="'+bW.toFixed(1)+'" height="'+ch.toFixed(1)+'" fill="#f07340" rx="2"/>';
+    var lbl=b.l.length>7?b.l.slice(0,6)+'…':b.l;
+    var lx=(gx+bW+1).toFixed(1);
+    s+='<text x="'+lx+'" y="'+(H-8)+'" font-family="IBM Plex Mono,monospace" font-size="7" fill="#3d4a55" text-anchor="middle">'+lbl+'</text>';
+  });
+  s+='</svg>';
+  return s;
+}
+
+// CSI overview
+(function(){
+  var sorted=DRIFTED.slice().sort(function(a,b){return b.csi-a.csi;});
+  var max=sorted[0].csi;
+  var el=document.getElementById('csi-overview');
+  var h='<div class="csi-header"><span style="width:230px">Feature</span><span style="flex:1">CSI Value</span><span style="width:44px;text-align:right">CSI</span></div>';
+  sorted.forEach(function(f){
+    var col=f.status==='CRITICAL'?'#f04f4f':'#e8962a';
+    h+='<div class="csi-row"><span class="csi-name">'+f.name+'</span><div class="csi-track"><div class="csi-fill" style="width:'+((f.csi/max)*100).toFixed(1)+'%;background:'+col+'"></div><div class="csi-threshold" style="left:'+((0.25/max)*100).toFixed(1)+'%"></div></div><span class="csi-num" style="color:'+col+'">'+f.csi.toFixed(3)+'</span></div>';
+  });
+  el.innerHTML=h;
+})();
+
+// Drift cards
+(function(){
+  var el=document.getElementById('drift-cards');
+  var h='';
+  DRIFTED.forEach(function(f,i){
+    var open=i<2;
+    var col=f.status==='CRITICAL'?'#f04f4f':'#e8962a';
+    var cbg=col.replace('#','');
+    var r=parseInt(cbg.substr(0,2),16),g=parseInt(cbg.substr(2,2),16),b=parseInt(cbg.substr(4,2),16);
+    h+='<div class="drift-card" id="dc'+i+'" style="border-color:'+(open?col+'33':'#1e2428')+';background:'+(open?'rgba('+r+','+g+','+b+',.04)':'transparent')+'">';
+    h+='<div class="drift-header" onclick="toggleCard('+i+')">';
+    h+='<div class="drift-left"><span id="arr'+i+'" style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:'+col+';margin-right:2px">'+(open?'▼':'►')+'</span>';
+    h+='<span class="mono" style="font-size:12px">'+f.name+'</span>';
+    h+='<span class="badge" style="color:'+col+';background:rgba('+r+','+g+','+b+',.08);border-color:rgba('+r+','+g+','+b+',.25)">'+f.status+'</span></div>';
+    h+='<div class="drift-right"><span class="drift-csi" style="color:'+col+'">CSI '+f.csi.toFixed(3)+'</span>';
+    h+='<div class="drift-legend"><span class="legend-dot" style="background:#4b8ef0"></span><span class="legend-lbl">Baseline</span><span class="legend-dot" style="background:#f07340;margin-left:6px"></span><span class="legend-lbl">Current</span></div></div></div>';
+    h+='<div id="db'+i+'" style="display:'+(open?'block':'none')+';padding:12px 14px;border-top:1px solid rgba('+r+','+g+','+b+',.15)">';
+    h+='<div class="drift-note" style="border-left-color:'+col+'">'+f.note+'</div>';
+    h+=makeBinSVG(f.bins);
+    h+='</div></div>';
+  });
+  el.innerHTML=h;
+})();
+
+function toggleCard(i){
+  var f=DRIFTED[i];
+  var col=f.status==='CRITICAL'?'#f04f4f':'#e8962a';
+  var cbg=col.replace('#','');
+  var r=parseInt(cbg.substr(0,2),16),g=parseInt(cbg.substr(2,2),16),b=parseInt(cbg.substr(4,2),16);
+  var body=document.getElementById('db'+i);
+  var arr=document.getElementById('arr'+i);
+  var card=document.getElementById('dc'+i);
+  var open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  arr.textContent=open?'►':'▼';
+  card.style.borderColor=open?'#1e2428':col+'33';
+  card.style.background=open?'transparent':'rgba('+r+','+g+','+b+',.04)';
+}
+
+// Score chart
+document.getElementById('score-chart').innerHTML=makeBinSVG(SCORE_BINS);
+
+// Heatmap
+(function(){
+  var el=document.getElementById('hm-body');
+  var h='';
+  HM_ROWS.forEach(function(row){
+    function cs(v){return v>=50?'color:#f04f4f;background:rgba(240,79,79,.12);font-weight:600':v>=15?'color:#e8962a;background:rgba(232,150,42,.10);font-weight:600':v>=5?'color:#e8e066;background:rgba(232,224,102,.06)':'color:#7a8897';}
+    function fmt(v){return v>0?v.toFixed(2)+'%':'—';}
+    h+='<tr><td style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#dde3e8;padding:6px 10px">'+row.f+'</td>';
+    [row.cap,row.floor,row.miss,row.zero].forEach(function(v){h+='<td style="padding:6px 10px;'+cs(v)+'">'+fmt(v)+'</td>';});
+    h+='</tr>';
+  });
+  el.innerHTML=h;
+})();
+
+// Contracts
+(function(){
+  function render(items,status,elId){
+    var col=status==='CRITICAL'?'#f04f4f':status==='WARN'?'#e8962a':'#3dba7e';
+    var cbg=col.replace('#','');
+    var r=parseInt(cbg.substr(0,2),16),g=parseInt(cbg.substr(2,2),16),b=parseInt(cbg.substr(4,2),16);
+    var bg='rgba('+r+','+g+','+b+',.07)',bdr='rgba('+r+','+g+','+b+',.2)';
+    var el=document.getElementById(elId);
+    var h='';
+    items.forEach(function(c){
+      h+='<div class="contract-row" style="border-color:'+bdr+';background:'+bg+'">';
+      h+='<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#dde3e8">'+c.f+'</span>';
+      h+='<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#7a8897">'+c.rule+'</span>';
+      h+='<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:'+col+'">'+c.obs+'</span>';
+      h+='<span class="badge" style="color:'+col+';background:'+bg+';border-color:'+bdr+'">'+status+'</span>';
+      h+='</div>';
+    });
+    el.innerHTML=h;
+  }
+  render(CONTRACTS.crit,'CRITICAL','contracts-crit');
+  render(CONTRACTS.warn,'WARN','contracts-warn');
+  render(CONTRACTS.ok,'OK','contracts-ok');
+})();
+
+function switchTab(n){
+  document.querySelectorAll('.panel').forEach(function(p,i){p.classList.toggle('active',i===n);});
+  document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('active',i===n);});
+}
+</script>
+</body>
+</html>
